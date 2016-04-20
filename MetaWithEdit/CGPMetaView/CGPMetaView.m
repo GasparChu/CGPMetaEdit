@@ -26,8 +26,13 @@
     CGPMetaButton *btn_Meta = [CGPMetaButton buttonWithType:UIButtonTypeCustom];
     [btn_Meta setTitle:title forState:UIControlStateNormal];
     if (self.isDragable) {
-        UILongPressGestureRecognizer *longGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(buttonLongPressed:)];
-        [btn_Meta addGestureRecognizer:longGesture];
+        if (self.GestureType == 0) {
+            UILongPressGestureRecognizer *longGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(buttonLongPressed:)];
+            [btn_Meta addGestureRecognizer:longGesture];
+        } else {
+            UIPanGestureRecognizer *panGesture = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGesture:)];
+            [btn_Meta addGestureRecognizer:panGesture];
+        }
     }
     btn_Meta.edit = NO;
     [self addSubview:btn_Meta];
@@ -92,8 +97,76 @@
     }
 }
 
+//长按拖动
 #pragma mark Gesture Action
 - (void)buttonLongPressed:(UILongPressGestureRecognizer *)sender
+{
+    CGPMetaButton *btn_Meta = (CGPMetaButton *)sender.view;
+    switch (sender.state) {
+        case UIGestureRecognizerStateBegan:
+        {
+            self.edit = YES;
+            if (_btn_Place == nil) {
+                _btn_Place = [CGPMetaButton buttonWithType:UIButtonTypeCustom];
+                [_btn_Place setTitle:btn_Meta.titleLabel.text forState:UIControlStateNormal];
+                _btn_Place.hidden = YES;
+                
+                [self.mArray_Buttons insertObject:_btn_Place atIndex:[self.mArray_Buttons indexOfObject:btn_Meta]];
+                [self.mArray_Buttons removeObject:btn_Meta];
+            }
+            [UIView animateWithDuration:kDuration animations:^{
+                btn_Meta.transform = CGAffineTransformMakeScale(1.1, 1.1);
+                btn_Meta.alpha = 0.7;
+            }];
+            
+            
+        }
+            break;
+        case UIGestureRecognizerStateChanged:
+        {
+            CGPoint newPoint = [sender locationInView:self];
+            CGFloat Xdelta = newPoint.x - btn_Meta.center.x;
+            CGFloat Ydelta = newPoint.y - btn_Meta.center.y;
+            //            NSLog(@"xdelta is %f, ydelta is %f", Xdelta, Ydelta);
+            btn_Meta.center = CGPointMake(btn_Meta.center.x + Xdelta, btn_Meta.center.y + Ydelta);
+            //检测是否进入其他button区域
+            NSInteger newIndex = [self indexOfButtonWithMovingButton:btn_Meta];
+            if (newIndex < 0) {
+                
+            }else {
+                if (_btn_Place == nil) {
+                    _btn_Place = [CGPMetaButton buttonWithType:UIButtonTypeCustom];
+                    [_btn_Place setTitle:btn_Meta.titleLabel.text forState:UIControlStateNormal];
+                    _btn_Place.hidden = YES;
+                    
+                    [self.mArray_Buttons removeObject:btn_Meta];
+                }else {
+                    [self.mArray_Buttons removeObject:_btn_Place];
+                }
+                [self.mArray_Buttons insertObject:_btn_Place atIndex:newIndex];
+            }
+        }
+            break;
+        case UIGestureRecognizerStateEnded:
+        {
+            if (_btn_Place != nil) {
+                [self.mArray_Buttons replaceObjectAtIndex:[self.mArray_Buttons indexOfObject:_btn_Place] withObject:btn_Meta];
+                _btn_Place = nil;
+            }
+            [UIView animateWithDuration:kDuration animations:^{
+                btn_Meta.transform = CGAffineTransformIdentity;
+                btn_Meta.alpha = 1;
+            }];
+        }
+            break;
+        default:
+            break;
+    }
+    [self refreshView];
+}
+
+//直接拖动
+- (void)panGesture:(UIPanGestureRecognizer *)sender
 {
     CGPMetaButton *btn_Meta = (CGPMetaButton *)sender.view;
     switch (sender.state) {

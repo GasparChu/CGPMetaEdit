@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #define kDuration       0.5f
+
 @interface CGPMetaView : UIScrollView
 //btn数组
 @property (strong, nonatomic) NSMutableArray *mArray_Buttons;
@@ -16,6 +17,9 @@
 @property (assign, nonatomic, getter = isEdit) BOOL edit;
 //是否可以拖拽
 @property (assign, nonatomic, getter=isDragable) BOOL dragable;
+
+//0长按1拖动
+@property (assign, nonatomic) NSInteger GestureType;
 
 //添加btn
 - (void)addButtonWithTitle:(NSString *)title;
